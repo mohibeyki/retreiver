@@ -3,6 +3,7 @@
 
 .idea
 .vscode
+*.csv
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
