@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description='extract related posts and comments
 parser.add_argument('--subs', type=str, default="pokemongo", help='subreddits to look for')
 parser.add_argument('--type', type=str, default="comment", help='type of data (subreddit, comment, submission)')
 parser.add_argument('--limit', type=int, default=100, help='total number of data per request')
-parser.add_argument('--iterations', type=int, default=100, help='total number of data gathered')
+parser.add_argument('--loops', type=int, default=100, help='total number of data gathered')
 parser.add_argument('--resume', type=bool, default=True, help='resume from the last run')
 args = parser.parse_args()
 
@@ -25,7 +25,7 @@ if not args.resume and os.path.exists('{}.csv'.format(args.type)):
 
 
 def get_start_time():
-    if args.resume:
+    if args.resume and os.path.exists('{}.csv'.format(args.type)):
         result = subprocess.run(['tail', '-1', '{}.csv'.format(args.type)], stdout=subprocess.PIPE)
         date_string = result.stdout.decode('UTF-8').split(',')[1]
         start_time = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')
@@ -35,7 +35,7 @@ def get_start_time():
 
 
 def get_total_items():
-    if args.resume:
+    if args.resume and os.path.exists('{}.csv'.format(args.type)):
         result = subprocess.run(['wc', '-l', '{}.csv'.format(args.type)], stdout=subprocess.PIPE)
         total = result.stdout.decode('UTF-8').split()[0]
         return int(total)
@@ -45,7 +45,7 @@ def get_total_items():
 
 def send_request(request_url):
     json_response = requests.get(request_url, headers={'User-Agent': "retriever by /u/mohibeyki"})
-    time.sleep(0.5)  # rate-limited to 120 r/s
+    time.sleep(0.5)  # rate-limited to a maximum of 120 r/s
 
     try:
         json_data = json_response.json()
@@ -70,7 +70,7 @@ def collect_comments():
     previous_epoch = get_start_time()
     total = get_total_items()
 
-    p_bar = tqdm(range(args.iterations))
+    p_bar = tqdm(range(args.loops))
     p_bar.set_postfix({'items': str(total)})
     for _ in p_bar:
         data = []
